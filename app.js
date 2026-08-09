@@ -142,7 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
     heatmapModeInput.addEventListener('change', (e) => {
         heatmapOptions.style.display = e.target.checked ? 'block' : 'none';
         if (!e.target.checked) selectedHeatmapAuthor = null;
-        updateTransforms();
+        if (heatmapStyleSelect.value === 'glass') {
+            renderInstancedMeshes();
+        } else {
+            updateTransforms();
+        }
     });
 
     timeLapseInput.addEventListener('change', (e) => {
