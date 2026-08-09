@@ -189,6 +189,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const uiOverlay = document.getElementById('ui-overlay');
         uiOverlay.classList.toggle('minimized');
     });
+
+    const hiddenArtInfo = document.getElementById('hidden-art-info');
+    const infoModal = document.getElementById('info-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    
+    if (hiddenArtInfo && infoModal && closeModalBtn) {
+        hiddenArtInfo.addEventListener('click', () => {
+            infoModal.style.display = 'flex';
+            // Trigger reflow for fade in
+            void infoModal.offsetWidth;
+            infoModal.style.opacity = '1';
+        });
+        
+        const closeModal = () => {
+            infoModal.style.opacity = '0';
+            setTimeout(() => {
+                infoModal.style.display = 'none';
+            }, 300);
+        };
+        
+        closeModalBtn.addEventListener('click', closeModal);
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) closeModal();
+        });
+    }
     
     downloadBtn.addEventListener('click', () => {
         renderer.render(scene, camera);
