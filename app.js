@@ -472,6 +472,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function generate3D() {
         const dayInput = document.getElementById('day-input');
+        if (!dayInput.value.trim()) {
+            showError("Please enter a canvas day (e.g. 45)");
+            return;
+        }
         const dayStr = dayInput.value.trim().padStart(4, '0');
         const day = parseInt(dayStr, 10);
         
