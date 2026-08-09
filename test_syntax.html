@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html><body>
+<script>
+window.onerror = function(msg, url, line, col, error) {
+    var fs = new ActiveXObject('Scripting.FileSystemObject');
+    var file = fs.CreateTextFile('d:\\basepaint\\error.txt', true);
+    file.WriteLine(msg + ' at ' + line + ':' + col);
+    file.Close();
+};
+</script>
+<script src="app.js"></script>
+</body></html>

@@ -1,0 +1,367 @@
+:root {
+    --bg-color: #1E2735;
+    --text-color: #ffffff;
+    --accent-color: #fde047;
+    --header-color: rgba(7, 62, 177, 0.8);
+    --panel-bg: rgba(30, 39, 53, 0.98);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #000; 
+    color: var(--text-color);
+    font-family: 'Roboto Mono', monospace;
+    overflow: hidden; 
+    width: 100vw;
+    height: 100vh;
+}
+
+#canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    width: 350px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none; 
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#ui-overlay.minimized {
+    transform: translateX(100%);
+}
+
+#ui-overlay > * {
+    pointer-events: auto; 
+}
+
+.controls {
+    background-color: var(--panel-bg);
+    padding: 0;
+    border-radius: 0;
+    border-left: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Hide scrollbar for elements */
+::-webkit-scrollbar {
+    display: none;
+}
+* {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+label {
+    font-size: 0.85rem;
+    color: var(--accent-color);
+}
+
+input[type="number"], input[type="text"] {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.75rem;
+    border-radius: 2px;
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    appearance: textfield;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent-color);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #000;
+    border: 2px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    border-radius: 2px;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: none !important;
+    transform: translateY(0);
+    will-change: transform;
+}
+
+button:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+button:active {
+    opacity: 0.8;
+    transform: translateY(0);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#loading, #error {
+    padding: 1rem;
+    border-radius: 2px;
+    font-size: 0.9rem;
+}
+
+#loading {
+    text-align: center;
+    color: var(--accent-color);
+    background-color: rgba(253, 224, 71, 0.1);
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#error {
+    text-align: center;
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.1);
+}
+
+
+
+
+/* Toggle Switch Styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  border: 2px solid var(--border-color);
+  transition: .3s;
+  border-radius: 2px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-color);
+  transition: .3s;
+  border-radius: 2px;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+  background-color: #000;
+}
+/* Premium Select Dropdowns */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-color) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    padding: 6px 30px 6px 12px !important;
+    border-radius: 2px !important;
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+    background-size: 16px;
+    transition: all 0.2s ease;
+}
+
+select:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--accent-color) !important;
+}
+
+select option {
+    background-color: var(--panel-bg);
+    color: var(--text-color);
+}
+/* Custom Animated Select */
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    width: 100%;
+}
+.custom-select {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.custom-select:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.custom-select.open {
+    border-color: var(--accent-color);
+}
+.custom-select-arrow {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: -4px;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+    background-size: cover;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.custom-select.open .custom-select-arrow {
+    transform: rotate(180deg);
+}
+.custom-options {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 100;
+    
+    /* Animation Properties */
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.1s ease, max-height 0.15s ease, transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.custom-options.open {
+    opacity: 1;
+    max-height: 250px;
+    transform: translateY(0);
+}
+.custom-select-wrapper.dropup .custom-select-arrow {
+    transform: rotate(180deg);
+}
+.custom-select-wrapper.dropup .custom-select.open .custom-select-arrow {
+    transform: rotate(0deg);
+}
+.custom-select-wrapper.dropup .custom-options {
+    top: auto;
+    bottom: calc(100% + 4px);
+    transform: translateY(10px);
+}
+.custom-select-wrapper.dropup .custom-options.open {
+    transform: translateY(0);
+}
+.custom-option {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.custom-option.selected {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+.custom-option:hover {
+    background-color: var(--accent-color);
+    color: #000;
+}
+
+
+input[type="number"], 
+input[type="text"] {
+    /* No transition for instant hover/focus response */
+}
+
+input[type="number"]:hover:not(:focus), 
+input[type="text"]:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.3);
+}
