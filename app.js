@@ -253,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.maxDistance = 800;
         controls.zoomSpeed = 1.25;
         controls.rotateSpeed = 1.0;
-        controls.addEventListener('change', () => { needsRender = true; });
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -687,6 +686,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 needsRender = false;
             }
         });
+        
+        needsRender = true;
     }
 
     async function generate3D() {
