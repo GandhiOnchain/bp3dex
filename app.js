@@ -249,11 +249,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 1.0;
+        controls.dampingFactor = 0.05;
         controls.maxDistance = 800;
         controls.zoomSpeed = 1.25;
         controls.rotateSpeed = 1.0;
-        controls.addEventListener('change', () => { needsRender = true; });
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -642,9 +641,12 @@ document.addEventListener('DOMContentLoaded', () => {
         needsRender = true;
     }
 
+    let lastCameraPos = new THREE.Vector3();
+    let lastCameraQuat = new THREE.Quaternion();
+
     function animate() {
         renderer.setAnimationLoop(() => {
-            const controlsChanged = controls.update();
+            controls.update();
             
             if (isPlayingAnim && window.voxelData) {
                 playbackTime += animSpeed;
@@ -655,8 +657,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 updateAnimationState();
             }
-
-            if (needsRender || controlsChanged) {
+            
+            const distSq = camera.position.distanceToSquared(lastCameraPos);
+            const angle = camera.quaternion.angleTo(lastCameraQuat);
+            
+            // Render freeze threshold: Stop rendering if sub-pixel movement is detected to prevent shimmering
+            if (distSq > 0.005 || angle > 0.005) {
+                lastCameraPos.copy(camera.position);
+                lastCameraQuat.copy(camera.quaternion);
+                needsRender = true;
+            }
+            
+            if (needsRender || isPlayingAnim) {
                 renderer.render(scene, camera);
                 needsRender = false;
             }
