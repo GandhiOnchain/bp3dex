@@ -561,7 +561,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     }
-                }
             } else {
                 if (isTooltipFixed) {
                     isTooltipFixed = false;
