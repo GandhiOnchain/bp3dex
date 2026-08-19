@@ -1040,12 +1040,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     let scaledZ = (pos.z / maxZ) * depthMultiplier;
                     
-                    dummy.matrix.set(
-                        heatmapScale, 0, 0, pos.x,
-                        0, heatmapScale, 0, pos.y,
-                        0, 0, heatmapScale, scaledZ,
-                        0, 0, 0, 1
-                    );
+                    dummy.position.set(pos.x, pos.y, scaledZ);
+                    dummy.scale.set(heatmapScale, heatmapScale, heatmapScale);
+                    dummy.updateMatrix();
                     mesh.setMatrixAt(i, dummy.matrix);
                 }
                 
@@ -1066,8 +1063,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            if (needsMatrixUpdate) mesh.instanceMatrix.needsUpdate = true;
-            if (colorUpdated) mesh.instanceColor.needsUpdate = true;
+            if (needsMatrixUpdate) {
+                mesh.instanceMatrix.needsUpdate = true;
+            } else {
+                // If it was just newly created, we STILL need to ensure it's pushed to GPU
+                // To be safe, always flag for update after renderInstancedMeshes
+                mesh.instanceMatrix.needsUpdate = true;
+            }
+            mesh.instanceColor.needsUpdate = true;
         });
         
         needsRender = true;
