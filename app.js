@@ -291,7 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let fixedPixelInfo = null;
 
         // Raycaster for hover tooltips
+        let lastPointerMoveTime = 0;
         const handlePointer = (event) => {
+            if (event.type === 'pointermove') {
+                const now = performance.now();
+                if (now - lastPointerMoveTime < 100) return;
+                lastPointerMoveTime = now;
+            }
             if (isTooltipFixed) return;
             
             if (controlsDiv.contains(event.target) || event.target.closest('#download-btn') || event.target.closest('#toggle-ui-btn')) {
