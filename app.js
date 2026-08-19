@@ -541,7 +541,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 isTooltipFixed = true;
                                 fixedPixelInfo = pixel;
                                 tooltip.style.pointerEvents = 'auto';
-                                tooltip.innerHTML = tooltip.innerHTML.replace('Click to lock the card', 'Click again for profile');
+                                const actionTextSpan = tooltip.querySelector('#action-text-span');
+                                if (actionTextSpan) {
+                                    actionTextSpan.innerText = 'Click again for profile';
+                                }
                             }
                         } else {
                             const now = performance.now();
