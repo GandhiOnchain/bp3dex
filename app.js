@@ -940,6 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         updateAnimationState();
+        updateTransforms();
     }
 
     function updateDepth() {
