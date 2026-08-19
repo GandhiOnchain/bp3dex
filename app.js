@@ -236,7 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x111827); // Dark grayish blue
-        scene.fog = new THREE.FogExp2(0x111827, 0.002);
+        // Add fog to blend distant voxel edges into the background, effectively eliminating high-contrast geometric edge shimmering
+        scene.fog = new THREE.FogExp2(0x111827, 0.0012);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
         camera.position.set(0, 0, 400);
@@ -767,9 +768,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("No strokes found for this day.");
             }
 
-            // Use 0.98 instead of 1.0 to create a microscopic gap between voxels.
-            // This completely eliminates z-fighting and edge-shimmering during active rotation.
-            const geometry = new THREE.BoxGeometry(0.99, 0.99, 1.0);
+            // Use 1.01 for X and Y to create a microscopic overlap between adjacent pixels.
+            const geometry = new THREE.BoxGeometry(1.01, 1.01, 1.0);
             const colorBuckets = {}; 
             const allPositions = [];
 
@@ -902,10 +902,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const { buckets, maxZ, palette, canvasSize } = window.voxelData;
         const depthMultiplier = parseInt(depthInput.value, 10);
         const showHidden = showHiddenInput.checked;
-        // Use 0.99 for X and Y to create a microscopic invisible gap between adjacent pixels in a stroke.
-        // This completely prevents perfectly coplanar side-faces from Z-fighting (shimmering).
-        // Keep Z at 1.0 so they remain full solid cubes and do not look like paper.
-        const geometry = new THREE.BoxGeometry(0.99, 0.99, 1.0);
+        // Use 1.01 for X and Y to create a microscopic overlap between adjacent pixels.
+        // This completely prevents the background from bleeding through sub-pixel gaps, 
+        // which was causing massive high-contrast geometric edge aliasing (shimmering).
+        const geometry = new THREE.BoxGeometry(1.01, 1.01, 1.0);
         
         const isGlassMode = heatmapModeInput.checked && heatmapStyleSelect.value === 'glass' && selectedHeatmapAuthor;
         
