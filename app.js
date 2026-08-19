@@ -259,12 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
-        // Debug Cube to verify rendering pipeline
-        const debugGeo = new THREE.BoxGeometry(50, 50, 50);
-        const debugMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const debugMesh = new THREE.Mesh(debugGeo, debugMat);
-        scene.add(debugMesh);
-
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(200, 500, 300);
         scene.add(dirLight);
@@ -673,10 +667,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const distSq = camera.position.distanceToSquared(lastCameraPos);
             const angle = camera.quaternion.angleTo(lastCameraQuat);
             
-            // Render freeze threshold: Stop rendering if sub-pixel movement is detected to prevent shimmering
-            if (distSq > 0.005 || angle > 0.005) {
-                lastCameraPos.copy(camera.position);
-                lastCameraQuat.copy(camera.quaternion);
+            // Always copy the state so we measure per-frame delta (fixes the earthquake stutter)
+            lastCameraPos.copy(camera.position);
+            lastCameraQuat.copy(camera.quaternion);
+            
+            // Stop rendering if sub-pixel movement per frame is extremely tiny (fixes shimmering)
+            if (distSq > 0.00005 || angle > 0.00005) {
                 needsRender = true;
             }
             
