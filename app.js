@@ -259,6 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
+        // Debug Cube to verify rendering pipeline
+        const debugGeo = new THREE.BoxGeometry(50, 50, 50);
+        const debugMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const debugMesh = new THREE.Mesh(debugGeo, debugMat);
+        scene.add(debugMesh);
+
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
         dirLight.position.set(200, 500, 300);
         scene.add(dirLight);
