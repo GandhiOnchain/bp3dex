@@ -660,36 +660,36 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer.setAnimationLoop(() => {
             controls.update();
             
-            if (controls.enableDamping && !isDragging) {
-                const distSq = camera.position.distanceToSquared(lastCameraPos);
-                // When sub-pixel movement becomes small enough, aggressively kill the momentum
-                // This instantly halts the camera and physically prevents prolonged shimmering
-                if (distSq < 0.005 && distSq > 0) {
-                    controls.enableDamping = false;
-                }
-            }
-            
-            lastCameraPos.copy(camera.position);
-            lastCameraQuat.copy(camera.quaternion);
-            
             if (isPlayingAnim && window.voxelData) {
                 playbackTime += animSpeed;
                 if (playbackTime >= window.voxelData.maxZ) {
                     playbackTime = window.voxelData.maxZ;
                     isPlayingAnim = false;
-                    animPlayBtn.innerHTML = PLAY_ICON;
+                    animPlayBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Play';
                 }
                 updateAnimationState();
             }
             
-            try {
-                renderer.render(scene, camera);
-            } catch (e) {
-                console.error("WebGL Render Error:", e);
-                document.getElementById('error').textContent = "Render error: " + e.message;
-                document.getElementById('error').classList.remove('hidden');
+            const distSq = camera.position.distanceToSquared(lastCameraPos);
+            const angle = camera.quaternion.angleTo(lastCameraQuat);
+            
+            // Render freeze threshold: Stop rendering if sub-pixel movement is detected to prevent shimmering
+            if (distSq > 0.005 || angle > 0.005) {
+                lastCameraPos.copy(camera.position);
+                lastCameraQuat.copy(camera.quaternion);
+                needsRender = true;
             }
-            needsRender = false;
+            
+            if (needsRender || isPlayingAnim) {
+                try {
+                    renderer.render(scene, camera);
+                } catch (e) {
+                    console.error("WebGL Render Error:", e);
+                    document.getElementById('error').textContent = "Render error: " + e.message;
+                    document.getElementById('error').classList.remove('hidden');
+                }
+                needsRender = false;
+            }
         });
     }
 
