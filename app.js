@@ -255,10 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.rotateSpeed = 1.0;
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.35);
         dirLight.position.set(200, 500, 300);
         scene.add(dirLight);
         
@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Use 0.98 instead of 1.0 to create a microscopic gap between voxels.
             // This completely eliminates z-fighting and edge-shimmering during active rotation.
-            const geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
             const colorBuckets = {}; 
             const allPositions = [];
 
