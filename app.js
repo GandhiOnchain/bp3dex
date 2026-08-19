@@ -377,11 +377,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     }
                     
+                    const isMobile = window.matchMedia("(max-width: 768px)").matches || ('ontouchstart' in window);
                     const actionText = showDetailsInput.checked 
-                        ? 'Click to lock the card' 
+                        ? (isMobile ? '' : 'Click to lock the card')
                         : (heatmapModeInput.checked ? 'Double-click to view artist profile' : 'Click to view artist activity');
                     
-                    tooltip.innerHTML = `by <strong>${pixel.author.slice(0,6)}...${pixel.author.slice(-4)}</strong>${strokeDetails}<span style="font-size: 0.75rem; color: #aaa; margin-top: 5px; display: block;">${actionText}</span>`;
+                    const actionTextHtml = actionText || isMobile ? `<span style="font-size: 0.75rem; color: #aaa; margin-top: 5px; display: block;" id="action-text-span">${actionText}</span>` : '';
+                    
+                    tooltip.innerHTML = `by <strong>${pixel.author.slice(0,6)}...${pixel.author.slice(-4)}</strong>${strokeDetails}${actionTextHtml}`;
                     // Position using the absolute pixel coordinates calculated from the original mouse event
                     tooltip.style.left = window.lastMouseX + 15 + 'px';
                     tooltip.style.top = window.lastMouseY + 15 + 'px';
@@ -456,13 +459,16 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Ignore if the mouse moved more than 3 pixels OR was held down for more than 250ms (a drag/rotate)
             if (diffX > 3 || diffY > 3 || diffTime > 250) {
-                window.lastMouseX = event.clientX;
-                window.lastMouseY = event.clientY;
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                if (!isRaycasting) {
-                    isRaycasting = true;
-                    requestAnimationFrame(performRaycast);
+                const isMobile = window.matchMedia("(max-width: 768px)").matches || ('ontouchstart' in window);
+                if (!isMobile) {
+                    window.lastMouseX = event.clientX;
+                    window.lastMouseY = event.clientY;
+                    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                    if (!isRaycasting) {
+                        isRaycasting = true;
+                        requestAnimationFrame(performRaycast);
+                    }
                 }
                 return; 
             }
