@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Use 0.98 instead of 1.0 to create a microscopic gap between voxels.
             // This completely eliminates z-fighting and edge-shimmering during active rotation.
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const geometry = new THREE.BoxGeometry(0.99, 0.99, 1.0);
             const colorBuckets = {}; 
             const allPositions = [];
 
@@ -902,7 +902,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const { buckets, maxZ, palette, canvasSize } = window.voxelData;
         const depthMultiplier = parseInt(depthInput.value, 10);
         const showHidden = showHiddenInput.checked;
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        // Use 0.99 for X and Y to create a microscopic invisible gap between adjacent pixels in a stroke.
+        // This completely prevents perfectly coplanar side-faces from Z-fighting (shimmering).
+        // Keep Z at 1.0 so they remain full solid cubes and do not look like paper.
+        const geometry = new THREE.BoxGeometry(0.99, 0.99, 1.0);
         
         const isGlassMode = heatmapModeInput.checked && heatmapStyleSelect.value === 'glass' && selectedHeatmapAuthor;
         
