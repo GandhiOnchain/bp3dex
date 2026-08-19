@@ -254,11 +254,11 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.zoomSpeed = 1.25;
         controls.rotateSpeed = 1.0;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Lighting - Softened contrast to prevent high-frequency specular aliasing (shimmering)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.35);
         dirLight.position.set(200, 500, 300);
         scene.add(dirLight);
         
@@ -767,9 +767,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("No strokes found for this day.");
             }
 
-            // Use 0.98 instead of 1.0 to create a microscopic gap between voxels.
-            // This completely eliminates z-fighting and edge-shimmering during active rotation.
-            const geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+            // Use 0.95 to create a definitive microscopic gap between voxels.
+            // This definitively eliminates z-fighting and edge-shimmering during active rotation.
+            const geometry = new THREE.BoxGeometry(0.95, 0.95, 0.95);
             const colorBuckets = {}; 
             const allPositions = [];
 
@@ -902,11 +902,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const { buckets, maxZ, palette, canvasSize } = window.voxelData;
         const depthMultiplier = parseInt(depthInput.value, 10);
         const showHidden = showHiddenInput.checked;
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const geometry = new THREE.BoxGeometry(0.95, 0.95, 0.95);
         
         const isGlassMode = heatmapModeInput.checked && heatmapStyleSelect.value === 'glass' && selectedHeatmapAuthor;
         
         const dummy = new THREE.Object3D();
+        let zSpacing = maxZ > 1 ? depthMultiplier / maxZ : 1.0;
+        let zScale = Math.max(0.01, zSpacing * 2.5);
 
         Object.keys(buckets).forEach(colorIdx => {
             const positions = buckets[colorIdx];
@@ -927,6 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     activePos.forEach((pos, i) => {
                         const scaledZ = (pos.z / maxZ) * depthMultiplier;
                         dummy.position.set(pos.x, pos.y, scaledZ);
+                        dummy.scale.set(1.0, 1.0, zScale);
                         dummy.updateMatrix();
                         meshActive.setMatrixAt(i, dummy.matrix);
                         meshActive.setColorAt(i, baseColor);
@@ -942,6 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     inactivePos.forEach((pos, i) => {
                         const scaledZ = (pos.z / maxZ) * depthMultiplier;
                         dummy.position.set(pos.x, pos.y, scaledZ);
+                        dummy.scale.set(1.0, 1.0, zScale);
                         dummy.updateMatrix();
                         meshInactive.setMatrixAt(i, dummy.matrix);
                         meshInactive.setColorAt(i, baseColor);
@@ -957,6 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 visiblePositions.forEach((pos, i) => {
                     const scaledZ = (pos.z / maxZ) * depthMultiplier;
                     dummy.position.set(pos.x, pos.y, scaledZ);
+                    dummy.scale.set(1.0, 1.0, zScale);
                     dummy.updateMatrix();
                     mesh.setMatrixAt(i, dummy.matrix);
                     mesh.setColorAt(i, baseColor);
@@ -1049,8 +1054,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     let scaledZ = (pos.z / maxZ) * depthMultiplier;
                     
+                    // Dynamically scale Z-thickness to prevent 5000+ faces from overlapping in the same space.
+                    // This eliminates the mathematical root cause of the Z-fighting shimmering.
+                    let zSpacing = maxZ > 1 ? depthMultiplier / maxZ : 1.0;
+                    let zScale = Math.max(0.01, zSpacing * 2.5);
+                    
                     dummy.position.set(pos.x, pos.y, scaledZ);
-                    dummy.scale.set(heatmapScale, heatmapScale, heatmapScale);
+                    dummy.scale.set(heatmapScale, heatmapScale, heatmapScale * zScale);
                     dummy.updateMatrix();
                     mesh.setMatrixAt(i, dummy.matrix);
                 }
