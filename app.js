@@ -243,7 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
         camera.position.set(0, 0, 400);
 
         // Enable logarithmicDepthBuffer to resolve z-fighting between extremely close overlapping voxel faces
-        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
+        // Force high-performance to ensure dedicated GPU (which has proper MSAA) is used instead of integrated graphics
+        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
@@ -768,8 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("No strokes found for this day.");
             }
 
-            // Use 1.01 for X and Y to create a microscopic overlap between adjacent pixels.
-            const geometry = new THREE.BoxGeometry(1.01, 1.01, 1.0);
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
             const colorBuckets = {}; 
             const allPositions = [];
 
@@ -902,10 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { buckets, maxZ, palette, canvasSize } = window.voxelData;
         const depthMultiplier = parseInt(depthInput.value, 10);
         const showHidden = showHiddenInput.checked;
-        // Use 1.01 for X and Y to create a microscopic overlap between adjacent pixels.
-        // This completely prevents the background from bleeding through sub-pixel gaps, 
-        // which was causing massive high-contrast geometric edge aliasing (shimmering).
-        const geometry = new THREE.BoxGeometry(1.01, 1.01, 1.0);
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
         
         const isGlassMode = heatmapModeInput.checked && heatmapStyleSelect.value === 'glass' && selectedHeatmapAuthor;
         
