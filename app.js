@@ -291,13 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let fixedPixelInfo = null;
 
         // Raycaster for hover tooltips
-        let lastPointerMoveTime = 0;
-        const handlePointer = (event) => {
-            if (event.type === 'pointermove') {
-                const now = performance.now();
-                if (now - lastPointerMoveTime < 100) return;
-                lastPointerMoveTime = now;
-            }
+        let hoverTimeout = null;
+        const performRaycast = (event) => {
             if (isTooltipFixed) return;
             
             if (controlsDiv.contains(event.target) || event.target.closest('#download-btn') || event.target.closest('#toggle-ui-btn')) {
@@ -377,6 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tooltip.classList.add('hidden');
             document.body.style.cursor = 'default';
+        };
+
+        const handlePointer = (event) => {
+            if (event.type === 'pointermove') {
+                if (hoverTimeout) clearTimeout(hoverTimeout);
+                hoverTimeout = setTimeout(() => performRaycast(event), 100);
+            } else {
+                performRaycast(event);
+            }
         };
         window.addEventListener('pointermove', handlePointer);
         window.addEventListener('pointerdown', handlePointer);
