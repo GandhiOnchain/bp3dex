@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.dampingFactor = 0.05;
         controls.maxDistance = 800;
         controls.zoomSpeed = 1.25;
-        controls.rotateSpeed = 1.5;
+        controls.rotateSpeed = 3.0;
         controls.addEventListener('change', () => { needsRender = true; });
 
         // Lighting
@@ -323,11 +323,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const maxZ = window.voxelData.maxZ;
                 const radiusSq = 0.6; // slightly larger than 0.5^2 to make picking forgiving
                 
+                // AABB projection optimization: find the (X, Y) bounds of the ray as it passes through the Z limits of the 3D canvas
+                let minBoxX = -Infinity, maxBoxX = Infinity;
+                let minBoxY = -Infinity, maxBoxY = Infinity;
+                if (Math.abs(dz) > 0.0001) {
+                    const t0 = (0 - oz) / dz;
+                    const t1 = (depthMultiplier - oz) / dz;
+                    if (t0 > 0 || t1 > 0) {
+                        const x0 = ox + t0 * dx;
+                        const y0 = oy + t0 * dy;
+                        const x1 = ox + t1 * dx;
+                        const y1 = oy + t1 * dy;
+                        minBoxX = Math.min(x0, x1) - 2;
+                        maxBoxX = Math.max(x0, x1) + 2;
+                        minBoxY = Math.min(y0, y1) - 2;
+                        maxBoxY = Math.max(y0, y1) + 2;
+                    }
+                }
+                
                 for (let colorIdx in window.voxelData.buckets) {
                     const bucket = window.voxelData.buckets[colorIdx];
                     for (let i = 0; i < bucket.length; i++) {
                         const p = bucket[i];
                         if (p.isHidden && !showHidden) continue;
+                        
+                        // Extremely fast rejection using AABB bounds (culls 99% of pixels)
+                        if (p.x < minBoxX || p.x > maxBoxX || p.y < minBoxY || p.y > maxBoxY) continue;
                         
                         const sz = (p.z / maxZ) * depthMultiplier;
                         
@@ -490,11 +511,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const maxZ = window.voxelData.maxZ;
                 const radiusSq = 0.6;
                 
+                let minBoxX = -Infinity, maxBoxX = Infinity;
+                let minBoxY = -Infinity, maxBoxY = Infinity;
+                if (Math.abs(dz) > 0.0001) {
+                    const t0 = (0 - oz) / dz;
+                    const t1 = (depthMultiplier - oz) / dz;
+                    if (t0 > 0 || t1 > 0) {
+                        const x0 = ox + t0 * dx;
+                        const y0 = oy + t0 * dy;
+                        const x1 = ox + t1 * dx;
+                        const y1 = oy + t1 * dy;
+                        minBoxX = Math.min(x0, x1) - 2;
+                        maxBoxX = Math.max(x0, x1) + 2;
+                        minBoxY = Math.min(y0, y1) - 2;
+                        maxBoxY = Math.max(y0, y1) + 2;
+                    }
+                }
+                
                 for (let colorIdx in window.voxelData.buckets) {
                     const bucket = window.voxelData.buckets[colorIdx];
                     for (let i = 0; i < bucket.length; i++) {
                         const p = bucket[i];
                         if (p.isHidden && !showHidden) continue;
+                        if (p.x < minBoxX || p.x > maxBoxX || p.y < minBoxY || p.y > maxBoxY) continue;
                         
                         const sz = (p.z / maxZ) * depthMultiplier;
                         const vx = p.x - ox;
