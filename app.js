@@ -309,52 +309,86 @@ document.addEventListener('DOMContentLoaded', () => {
             
             raycaster.setFromCamera(mouse, camera);
             
-            const intersects = raycaster.intersectObjects(voxelGroup.children);
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
-                if (intersect.object.userData && intersect.object.userData.pixelData && intersect.instanceId !== undefined) {
-                    const pixel = intersect.object.userData.pixelData[intersect.instanceId];
-                    if (pixel && pixel.author) {
-                        const matrix = new THREE.Matrix4();
-                        intersect.object.getMatrixAt(intersect.instanceId, matrix);
-                        highlightMesh.position.setFromMatrixPosition(matrix);
-                        highlightMesh.scale.setFromMatrixScale(matrix);
-                        highlightMesh.rotation.setFromRotationMatrix(matrix);
-                        highlightMesh.visible = true;
+            // Custom blazingly fast raycast (avoids Three.js InstancedMesh matrix overhead)
+            let closestIntersect = null;
+            let minDist = Infinity;
+            
+            if (window.voxelData) {
+                const ray = raycaster.ray;
+                const ox = ray.origin.x, oy = ray.origin.y, oz = ray.origin.z;
+                const dx = ray.direction.x, dy = ray.direction.y, dz = ray.direction.z;
+                
+                const showHidden = showHiddenInput.checked;
+                const depthMultiplier = parseInt(depthInput.value, 10);
+                const maxZ = window.voxelData.maxZ;
+                const radiusSq = 0.6; // slightly larger than 0.5^2 to make picking forgiving
+                
+                for (let colorIdx in window.voxelData.buckets) {
+                    const bucket = window.voxelData.buckets[colorIdx];
+                    for (let i = 0; i < bucket.length; i++) {
+                        const p = bucket[i];
+                        if (p.isHidden && !showHidden) continue;
                         
-                        let strokeDetails = '';
-                        if (pixel.stroke) {
-                            const s = pixel.stroke;
-                            const brushStr = s.brushId ? `#${s.brushId}` : 'N/A';
-                            const sizeStr = s.pixels ? `${s.pixels} pixels` : 'N/A';
-                            const ts = s.timestamp ? new Date(parseInt(s.timestamp, 10) * 1000) : null;
-                            const dateOnly = ts ? ts.toLocaleDateString() : 'N/A';
-                            const timeOnly = ts ? ts.toLocaleTimeString() : 'N/A';
-                            const txStr = s.tx ? `<a href="https://basescan.org/tx/${s.tx}" target="_blank" style="color: #4da6ff; text-decoration: underline; pointer-events: auto;">${s.tx.slice(0, 10)}...</a>` : 'N/A';
-                            
-                            strokeDetails = `
-                                <div style="margin-top: 3px; color: #ddd; font-size: 0.70rem;">on <strong>${dateOnly}</strong> at <strong>${timeOnly}</strong></div>
-                                <div style="margin-top: 6px; margin-bottom: 6px; padding-top: 6px; padding-bottom: 6px; border-top: 1px solid rgba(255,255,255,0.2); border-bottom: 1px solid rgba(255,255,255,0.2); font-size: 0.75rem; color: #ddd; line-height: 1.4;">
-                                    <div><strong>Brush:</strong> ${brushStr}</div>
-                                    <div><strong>Size:</strong> ${sizeStr}</div>
-                                    <div><strong>Tx:</strong> ${txStr}</div>
-                                </div>
-                            `;
+                        const sz = (p.z / maxZ) * depthMultiplier;
+                        
+                        const vx = p.x - ox;
+                        const vy = p.y - oy;
+                        const vz = sz - oz;
+                        
+                        const t = vx * dx + vy * dy + vz * dz;
+                        
+                        if (t > 0 && t < minDist) {
+                            const dSq = (vx*vx + vy*vy + vz*vz) - (t*t);
+                            if (dSq < radiusSq) {
+                                minDist = t;
+                                closestIntersect = { pixel: p };
+                            }
                         }
-                        
-                        const actionText = showDetailsInput.checked 
-                            ? 'Click to lock the card' 
-                            : (heatmapModeInput.checked ? 'Double-click to view artist profile' : 'Click to view artist activity');
-                        
-                        tooltip.innerHTML = `by <strong>${pixel.author.slice(0,6)}...${pixel.author.slice(-4)}</strong>${strokeDetails}<span style="font-size: 0.75rem; color: #aaa; margin-top: 5px; display: block;">${actionText}</span>`;
-                        // Position using the absolute pixel coordinates calculated from the original mouse event
-                        tooltip.style.left = window.lastMouseX + 15 + 'px';
-                        tooltip.style.top = window.lastMouseY + 15 + 'px';
-                        tooltip.classList.remove('hidden');
-                        document.body.style.cursor = 'pointer';
-                        needsRender = true;
-                        return;
                     }
+                }
+            }
+            
+            if (closestIntersect) {
+                const pixel = closestIntersect.pixel;
+                if (pixel && pixel.author) {
+                    const sz = (pixel.z / window.voxelData.maxZ) * parseInt(depthInput.value, 10);
+                    highlightMesh.position.set(pixel.x, pixel.y, sz);
+                    highlightMesh.scale.set(1.05, 1.05, 1.05);
+                    highlightMesh.rotation.set(0, 0, 0);
+                    highlightMesh.visible = true;
+                    
+                    let strokeDetails = '';
+                    if (pixel.stroke) {
+                        const s = pixel.stroke;
+                        const brushStr = s.brushId ? `#${s.brushId}` : 'N/A';
+                        const sizeStr = s.pixels ? `${s.pixels} pixels` : 'N/A';
+                        const ts = s.timestamp ? new Date(parseInt(s.timestamp, 10) * 1000) : null;
+                        const dateOnly = ts ? ts.toLocaleDateString() : 'N/A';
+                        const timeOnly = ts ? ts.toLocaleTimeString() : 'N/A';
+                        const txStr = s.tx ? `<a href="https://basescan.org/tx/${s.tx}" target="_blank" style="color: #4da6ff; text-decoration: underline; pointer-events: auto;">${s.tx.slice(0, 10)}...</a>` : 'N/A';
+                        
+                        strokeDetails = `
+                            <div style="margin-top: 3px; color: #ddd; font-size: 0.70rem;">on <strong>${dateOnly}</strong> at <strong>${timeOnly}</strong></div>
+                            <div style="margin-top: 6px; margin-bottom: 6px; padding-top: 6px; padding-bottom: 6px; border-top: 1px solid rgba(255,255,255,0.2); border-bottom: 1px solid rgba(255,255,255,0.2); font-size: 0.75rem; color: #ddd; line-height: 1.4;">
+                                <div><strong>Brush:</strong> ${brushStr}</div>
+                                <div><strong>Size:</strong> ${sizeStr}</div>
+                                <div><strong>Tx:</strong> ${txStr}</div>
+                            </div>
+                        `;
+                    }
+                    
+                    const actionText = showDetailsInput.checked 
+                        ? 'Click to lock the card' 
+                        : (heatmapModeInput.checked ? 'Double-click to view artist profile' : 'Click to view artist activity');
+                    
+                    tooltip.innerHTML = `by <strong>${pixel.author.slice(0,6)}...${pixel.author.slice(-4)}</strong>${strokeDetails}<span style="font-size: 0.75rem; color: #aaa; margin-top: 5px; display: block;">${actionText}</span>`;
+                    // Position using the absolute pixel coordinates calculated from the original mouse event
+                    tooltip.style.left = window.lastMouseX + 15 + 'px';
+                    tooltip.style.top = window.lastMouseY + 15 + 'px';
+                    tooltip.classList.remove('hidden');
+                    document.body.style.cursor = 'pointer';
+                    needsRender = true;
+                    return;
                 }
             }
             if (highlightMesh.visible) {
@@ -394,8 +428,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let startX = 0;
         let startY = 0;
         let startTime = 0;
-        renderer.domElement.addEventListener('pointerdown', (event) => {
-            isDragging = true;
+        window.addEventListener('pointerdown', (event) => {
+            // Only set dragging if it's on the canvas to not break UI clicks
+            if (!controlsDiv.contains(event.target)) {
+                isDragging = true;
+            }
             startX = event.clientX;
             startY = event.clientY;
             startTime = performance.now();
@@ -405,9 +442,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 needsRender = true;
             }
             tooltip.classList.add('hidden');
-        });
+        }, { capture: true });
 
-        renderer.domElement.addEventListener('pointerup', (event) => {
+        window.addEventListener('pointerup', (event) => {
             isDragging = false;
             
             // If they just finished dragging, immediately re-trigger a hover check
@@ -434,12 +471,45 @@ document.addEventListener('DOMContentLoaded', () => {
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             
-            const intersects = raycaster.intersectObjects(voxelGroup.children);
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
-                if (intersect.object.userData && intersect.object.userData.pixelData && intersect.instanceId !== undefined) {
-                    const pixel = intersect.object.userData.pixelData[intersect.instanceId];
-                    if (pixel && pixel.author) {
+            let closestIntersect = null;
+            let minDist = Infinity;
+            
+            if (window.voxelData) {
+                const ray = raycaster.ray;
+                const ox = ray.origin.x, oy = ray.origin.y, oz = ray.origin.z;
+                const dx = ray.direction.x, dy = ray.direction.y, dz = ray.direction.z;
+                
+                const showHidden = showHiddenInput.checked;
+                const depthMultiplier = parseInt(depthInput.value, 10);
+                const maxZ = window.voxelData.maxZ;
+                const radiusSq = 0.6;
+                
+                for (let colorIdx in window.voxelData.buckets) {
+                    const bucket = window.voxelData.buckets[colorIdx];
+                    for (let i = 0; i < bucket.length; i++) {
+                        const p = bucket[i];
+                        if (p.isHidden && !showHidden) continue;
+                        
+                        const sz = (p.z / maxZ) * depthMultiplier;
+                        const vx = p.x - ox;
+                        const vy = p.y - oy;
+                        const vz = sz - oz;
+                        const t = vx * dx + vy * dy + vz * dz;
+                        
+                        if (t > 0 && t < minDist) {
+                            const dSq = (vx*vx + vy*vy + vz*vz) - (t*t);
+                            if (dSq < radiusSq) {
+                                minDist = t;
+                                closestIntersect = { pixel: p };
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (closestIntersect) {
+                const pixel = closestIntersect.pixel;
+                if (pixel && pixel.author) {
                         if (showDetailsInput.checked) {
                             if (isTooltipFixed) {
                                 if (fixedPixelInfo === pixel) {
