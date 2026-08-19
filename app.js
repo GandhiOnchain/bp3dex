@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.25;
+        controls.dampingFactor = 1.0;
         controls.maxDistance = 800;
         controls.zoomSpeed = 1.25;
         controls.rotateSpeed = 1.0;
