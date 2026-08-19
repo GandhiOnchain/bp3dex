@@ -409,6 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderer.domElement.addEventListener('pointerup', (event) => {
             isDragging = false;
+            
+            // If they just finished dragging, immediately re-trigger a hover check
             if (controlsDiv.contains(event.target)) return;
             
             const diffX = Math.abs(event.clientX - startX);
@@ -416,7 +418,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const diffTime = performance.now() - startTime;
             
             // Ignore if the mouse moved more than 3 pixels OR was held down for more than 250ms (a drag/rotate)
-            if (diffX > 3 || diffY > 3 || diffTime > 250) return; 
+            if (diffX > 3 || diffY > 3 || diffTime > 250) {
+                window.lastMouseX = event.clientX;
+                window.lastMouseY = event.clientY;
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                if (!isRaycasting) {
+                    isRaycasting = true;
+                    requestAnimationFrame(performRaycast);
+                }
+                return; 
+            }
             
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -442,6 +454,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                     needsRender = true;
                                 }
                             } else {
+                                // Generate the tooltip HTML first by tricking performRaycast
+                                window.lastMouseX = event.clientX;
+                                window.lastMouseY = event.clientY;
+                                isTooltipFixed = false; 
+                                isRaycasting = true; // bypass the rAF lock
+                                performRaycast();
+                                
+                                // Now lock it
                                 isTooltipFixed = true;
                                 fixedPixelInfo = pixel;
                                 tooltip.style.pointerEvents = 'auto';
