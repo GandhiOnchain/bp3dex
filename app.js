@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         controls.maxDistance = 800;
         controls.zoomSpeed = 1.25;
         controls.rotateSpeed = 1.0;
+        controls.addEventListener('change', () => { needsRender = true; });
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -455,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Only set dragging if it's on the canvas to not break UI clicks
             if (!controlsDiv.contains(event.target)) {
                 isDragging = true;
+                controls.enableDamping = true;
             }
             startX = event.clientX;
             startY = event.clientY;
@@ -466,6 +468,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tooltip.classList.add('hidden');
         }, { capture: true });
+        
+        // Also re-enable damping on scroll/zoom
+        window.addEventListener('wheel', () => { controls.enableDamping = true; }, { passive: true });
+        window.addEventListener('touchstart', () => { controls.enableDamping = true; }, { passive: true });
 
         window.addEventListener('pointerup', (event) => {
             isDragging = false;
@@ -648,6 +654,18 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer.setAnimationLoop(() => {
             controls.update();
             
+            if (controls.enableDamping && !isDragging) {
+                const distSq = camera.position.distanceToSquared(lastCameraPos);
+                // When sub-pixel movement becomes small enough, aggressively kill the momentum
+                // This instantly halts the camera and physically prevents prolonged shimmering
+                if (distSq < 0.005 && distSq > 0) {
+                    controls.enableDamping = false;
+                }
+            }
+            
+            lastCameraPos.copy(camera.position);
+            lastCameraQuat.copy(camera.quaternion);
+            
             if (isPlayingAnim && window.voxelData) {
                 playbackTime += animSpeed;
                 if (playbackTime >= window.voxelData.maxZ) {
@@ -658,23 +676,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAnimationState();
             }
             
-            const distSq = camera.position.distanceToSquared(lastCameraPos);
-            const angle = camera.quaternion.angleTo(lastCameraQuat);
-            
-            // Render freeze threshold: Stop rendering if sub-pixel movement is detected to prevent shimmering
-            if (distSq > 0.005 || angle > 0.005) {
-                lastCameraPos.copy(camera.position);
-                lastCameraQuat.copy(camera.quaternion);
-                needsRender = true;
-            }
-            
             if (needsRender || isPlayingAnim) {
                 renderer.render(scene, camera);
                 needsRender = false;
             }
         });
-        
-        needsRender = true;
     }
 
     async function generate3D() {
