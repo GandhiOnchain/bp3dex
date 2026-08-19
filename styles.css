@@ -19,7 +19,7 @@ body {
     font-family: 'Roboto Mono', monospace;
     overflow: hidden; 
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
 }
 
 #canvas-container {
@@ -38,7 +38,7 @@ body {
     right: 0;
     z-index: 10;
     width: 350px;
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     pointer-events: none; 
@@ -60,7 +60,7 @@ body {
     border-left: 2px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
 }
 
 /* Hide scrollbar for elements */

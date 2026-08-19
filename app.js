@@ -245,9 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.xr.enabled = true;
         container.appendChild(renderer.domElement);
-        document.body.appendChild(VRButton.createButton(renderer));
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -272,39 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
         voxelGroup = new THREE.Group();
         scene.add(voxelGroup);
 
-        // Add VR Controllers with visible laser pointers
-        controller1 = renderer.xr.getController(0);
-        scene.add(controller1);
-        controller2 = renderer.xr.getController(1);
-        scene.add(controller2);
-        
-        const pointerGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -50)]);
-        const pointerMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
-        const pointerLine = new THREE.Line(pointerGeo, pointerMat);
-        controller1.add(pointerLine.clone());
-        controller2.add(pointerLine.clone());
-        
-        controller1.add(pointerLine.clone());
-        controller2.add(pointerLine.clone());
-
-        renderer.xr.addEventListener('sessionstart', () => {
-            // In VR, 1 unit = 1 meter. The artwork is 144+ units wide!
-            // We scale it down to ~1 meter wide and place it in front of the user at chest height.
-            let currentSize = 144;
-            if (voxelGroup.children.length > 0) {
-                // Approximate size from day theme if generated, but 144 is a safe default
-                currentSize = Math.max(144, window.lastCanvasSize || 144);
-            }
-            const scale = 1.0 / currentSize;
-            voxelGroup.scale.set(scale, scale, scale);
-            voxelGroup.position.set(0, 1.2, -0.8); // 1.2m high, 0.8m forward
-        });
-
-        renderer.xr.addEventListener('sessionend', () => {
-            // Restore desktop scale and position
-            voxelGroup.scale.set(1, 1, 1);
-            voxelGroup.position.set(0, 0, 0);
-        });
 
         const highlightGeo = new THREE.BoxGeometry(1, 1, 1);
         const highlightMat = new THREE.MeshBasicMaterial({ 
@@ -531,83 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAnimationState();
             }
 
-            // In VR, allow joysticks to rotate the artwork and adjust depth
-            if (renderer.xr.isPresenting) {
-                const session = renderer.xr.getSession();
-                if (session) {
-                    let rightAxes = null;
-                    let leftAxes = null;
-                    let rightTriggerValue = 0;
-                    let leftTriggerValue = 0;
-                    
-                    for (const source of session.inputSources) {
-                        if (source.gamepad) {
-                            if (source.handedness === 'right') {
-                                rightAxes = source.gamepad.axes;
-                                if (source.gamepad.buttons.length > 0) rightTriggerValue = source.gamepad.buttons[0].value;
-                            } else if (source.handedness === 'left') {
-                                leftAxes = source.gamepad.axes;
-                                if (source.gamepad.buttons.length > 0) leftTriggerValue = source.gamepad.buttons[0].value;
-                            } else {
-                                if (!rightAxes) {
-                                    rightAxes = source.gamepad.axes;
-                                    if (source.gamepad.buttons.length > 0) rightTriggerValue = source.gamepad.buttons[0].value;
-                                } else {
-                                    leftAxes = source.gamepad.axes;
-                                    if (source.gamepad.buttons.length > 0) leftTriggerValue = source.gamepad.buttons[0].value;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Triggers control Depth Spacing (Right = Expand, Left = Compress)
-                    if (rightTriggerValue > 0.1 || leftTriggerValue > 0.1) {
-                        let currentDepth = parseInt(depthInput.value, 10);
-                        let delta = (rightTriggerValue * 15) - (leftTriggerValue * 15);
-                        currentDepth += Math.round(delta);
-                        
-                        if (currentDepth < 1) currentDepth = 1;
-                        if (currentDepth > 1000) currentDepth = 1000;
-                        
-                        if (currentDepth !== parseInt(depthInput.value, 10)) {
-                            depthInput.value = currentDepth;
-                            const now = Date.now();
-                            if (!window.lastVRDepthUpdate || now - window.lastVRDepthUpdate > 50) {
-                                updateTransforms();
-                                window.lastVRDepthUpdate = now;
-                            }
-                        }
-                    }
-                    
-                    // Right joystick rotates the artwork
-                    if (rightAxes) {
-                        const x = (rightAxes.length >= 4) ? rightAxes[2] : rightAxes[0];
-                        const y = (rightAxes.length >= 4) ? rightAxes[3] : rightAxes[1];
-                        if (Math.abs(x) > 0.1) voxelGroup.rotation.y += x * 0.05;
-                        if (Math.abs(y) > 0.1) voxelGroup.rotation.x += y * 0.05;
-                    }
-                    
-                    // Left joystick mapping (Pan X and Slide Z)
-                    if (leftAxes) {
-                        const x = (leftAxes.length >= 4) ? leftAxes[2] : leftAxes[0];
-                        const y = (leftAxes.length >= 4) ? leftAxes[3] : leftAxes[1];
-                        
-                        // Slide forward/backward (fly through layers)
-                        if (Math.abs(y) > 0.1) {
-                            voxelGroup.translateZ(y * 0.5); 
-                        }
-                        
-                        // Pan left/right
-                        if (Math.abs(x) > 0.1) {
-                            voxelGroup.position.x += x * 0.05;
-                        }
-                    }
-                }
-            }
-
-            // In VR, we must render continuously for head tracking to work.
-            // On desktop, we only render when things change to save battery.
-            if (needsRender || controlsChanged || renderer.xr.isPresenting) {
+            if (needsRender || controlsChanged) {
                 renderer.render(scene, camera);
                 needsRender = false;
             }
