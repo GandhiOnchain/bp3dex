@@ -682,10 +682,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateAnimationState();
             }
             
-            if (needsRender || isPlayingAnim) {
+            try {
                 renderer.render(scene, camera);
-                needsRender = false;
+            } catch (e) {
+                console.error("WebGL Render Error:", e);
+                document.getElementById('error').textContent = "Render error: " + e.message;
+                document.getElementById('error').classList.remove('hidden');
             }
+            needsRender = false;
         });
     }
 
