@@ -671,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lastCameraQuat.copy(camera.quaternion);
             
             // Stop rendering if sub-pixel movement per frame is extremely tiny (fixes shimmering)
-            if (distSq > 0.00005 || angle > 0.00005) {
+            if (distSq > 0.005 || angle > 0.005) {
                 needsRender = true;
             }
             
