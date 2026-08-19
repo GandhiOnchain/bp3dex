@@ -291,20 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let fixedPixelInfo = null;
 
         // Raycaster for hover tooltips
-        let hoverTimeout = null;
-        const performRaycast = (event) => {
+        let isRaycasting = false;
+        const performRaycast = () => {
+            isRaycasting = false;
             if (isTooltipFixed) return;
             
-            if (controlsDiv.contains(event.target) || event.target.closest('#download-btn') || event.target.closest('#toggle-ui-btn')) {
-                if (highlightMesh.visible) {
-                    highlightMesh.visible = false;
-                    needsRender = true;
-                }
-                tooltip.classList.add('hidden');
-                document.body.style.cursor = 'default';
-                return;
-            }
-            
+            // Check if mouse is over UI elements (we can't use event.target easily here, so we skip if mouse is out of bounds)
             if (!showDetailsInput.checked) {
                 if (highlightMesh.visible) {
                     highlightMesh.visible = false;
@@ -315,8 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             
             const intersects = raycaster.intersectObjects(voxelGroup.children);
@@ -357,8 +347,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             : (heatmapModeInput.checked ? 'Double-click to view artist profile' : 'Click to view artist activity');
                         
                         tooltip.innerHTML = `by <strong>${pixel.author.slice(0,6)}...${pixel.author.slice(-4)}</strong>${strokeDetails}<span style="font-size: 0.75rem; color: #aaa; margin-top: 5px; display: block;">${actionText}</span>`;
-                        tooltip.style.left = event.clientX + 15 + 'px';
-                        tooltip.style.top = event.clientY + 15 + 'px';
+                        // Position using the absolute pixel coordinates calculated from the original mouse event
+                        tooltip.style.left = window.lastMouseX + 15 + 'px';
+                        tooltip.style.top = window.lastMouseY + 15 + 'px';
                         tooltip.classList.remove('hidden');
                         document.body.style.cursor = 'pointer';
                         needsRender = true;
@@ -374,12 +365,26 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.style.cursor = 'default';
         };
 
+        let isDragging = false;
         const handlePointer = (event) => {
-            if (event.type === 'pointermove') {
-                if (hoverTimeout) clearTimeout(hoverTimeout);
-                hoverTimeout = setTimeout(() => performRaycast(event), 100);
-            } else {
-                performRaycast(event);
+            if (controlsDiv.contains(event.target) || event.target.closest('#download-btn') || event.target.closest('#toggle-ui-btn')) {
+                if (highlightMesh.visible) {
+                    highlightMesh.visible = false;
+                    needsRender = true;
+                }
+                tooltip.classList.add('hidden');
+                document.body.style.cursor = 'default';
+                return;
+            }
+
+            window.lastMouseX = event.clientX;
+            window.lastMouseY = event.clientY;
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            if (!isRaycasting && !isDragging) {
+                isRaycasting = true;
+                requestAnimationFrame(performRaycast);
             }
         };
         window.addEventListener('pointermove', handlePointer);
@@ -390,12 +395,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let startY = 0;
         let startTime = 0;
         renderer.domElement.addEventListener('pointerdown', (event) => {
+            isDragging = true;
             startX = event.clientX;
             startY = event.clientY;
             startTime = performance.now();
+            
+            if (highlightMesh.visible) {
+                highlightMesh.visible = false;
+                needsRender = true;
+            }
+            tooltip.classList.add('hidden');
         });
 
         renderer.domElement.addEventListener('pointerup', (event) => {
+            isDragging = false;
             if (controlsDiv.contains(event.target)) return;
             
             const diffX = Math.abs(event.clientX - startX);
