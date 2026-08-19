@@ -72,6 +72,21 @@ body {
     scrollbar-width: none;
 }
 
+.mobile-icon {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .desktop-icon {
+        display: none !important;
+    }
+    .mobile-icon {
+        display: flex !important;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
 .control-group {
     display: flex;
     flex-direction: column;
