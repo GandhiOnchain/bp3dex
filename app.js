@@ -241,8 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
         camera.position.set(0, 0, 400);
 
-        // preserveDrawingBuffer is required to export toDataURL
-        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        // Enable logarithmicDepthBuffer to resolve z-fighting between extremely close overlapping voxel faces
+        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
@@ -767,7 +767,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("No strokes found for this day.");
             }
 
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            // Use 0.98 instead of 1.0 to create a microscopic gap between voxels.
+            // This completely eliminates z-fighting and edge-shimmering during active rotation.
+            const geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
             const colorBuckets = {}; 
             const allPositions = [];
 
